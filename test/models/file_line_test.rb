@@ -3,7 +3,7 @@ require 'test_helper'
 class FileLineTest < ActiveSupport::TestCase
   # Función para inicializar las variables utilizadas en las pruebas
   def setup
-    @file_line = FileLine.find file_lines(:from_yesterday_cv_file).id
+    @file_line = file_lines(:from_yesterday_cv_file)
   end
 
   # Prueba que se realicen las búsquedas como se espera
@@ -40,7 +40,7 @@ class FileLineTest < ActiveSupport::TestCase
   # Prueba de actualización de un ítem de una orden
   test 'update' do
     assert_no_difference 'FileLine.count' do
-      assert @file_line.update_attributes(pages: 20),
+      assert @file_line.update(pages: 20),
         @file_line.errors.full_messages.join('; ')
     end
 

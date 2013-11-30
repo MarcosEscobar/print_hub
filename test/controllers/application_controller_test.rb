@@ -5,8 +5,9 @@ class ApplicationControllerTest < ActionController::TestCase
     @controller.send :reset_session
     @controller.send 'response=', @response
     @controller.send 'request=', @request
+    @operator = users(:operator)
   end
-  
+
   test 'current customer session' do
     assert_nil @controller.send(:current_customer_session)
 
@@ -21,13 +22,15 @@ class ApplicationControllerTest < ActionController::TestCase
     CustomerSession.create(customers(:student))
 
     assert_not_nil @controller.send(:current_customer)
-    assert_equal customers(:student).id, @controller.send(:current_customer).id
+    assert_equal(
+      customers(:student).id, @controller.send(:current_customer).id
+    )
   end
 
   test 'current user session' do
     assert_nil @controller.send(:current_user_session)
 
-    UserSession.create(users(:administrator))
+    UserSession.create(@operator)
 
     assert_not_nil @controller.send(:current_user_session)
   end
@@ -35,63 +38,78 @@ class ApplicationControllerTest < ActionController::TestCase
   test 'current user' do
     assert_nil @controller.send(:current_user)
 
-    UserSession.create(users(:administrator))
+    UserSession.create(@operator)
 
     assert_not_nil @controller.send(:current_user)
-    assert_equal users(:administrator).id, @controller.send(:current_user).id
+    assert_equal @operator.id, @controller.send(:current_user).id
   end
-  
+
   test 'require customer' do
     @request.host = "#{APP_CONFIG['subdomains']['customers']}.printhub.local"
-    
+
     assert_equal false, @controller.send(:require_customer)
     assert_redirected_to new_customer_session_url
-    assert_equal I18n.t('messages.must_be_logged_in'),
+    assert_equal(
+      I18n.t('messages.must_be_logged_in'),
       @controller.send(:flash)[:notice]
+    )
 
     CustomerSession.create(customers(:student))
+
     assert_not_equal false, @controller.send(:require_customer)
   end
 
   test 'require no customer' do
     @request.host = "#{APP_CONFIG['subdomains']['customers']}.printhub.local"
-    
+
     assert @controller.send(:require_no_customer)
 
     CustomerSession.create(customers(:student))
+
     assert !@controller.send(:require_no_customer)
     assert_redirected_to catalog_url
-    assert_equal I18n.t('messages.must_be_logged_out'),
+    assert_equal(
+      I18n.t('messages.must_be_logged_out'),
       @controller.send(:flash)[:notice]
+    )
   end
 
   test 'require user' do
     assert_equal false, @controller.send(:require_user)
     assert_redirected_to new_user_session_url
-    assert_equal I18n.t('messages.must_be_logged_in'),
+    assert_equal(
+      I18n.t('messages.must_be_logged_in'),
       @controller.send(:flash)[:notice]
+    )
 
-    UserSession.create(users(:administrator))
+    UserSession.create(@operator)
+
     assert_not_equal false, @controller.send(:require_user)
   end
 
   test 'require no user' do
     assert @controller.send(:require_no_user)
 
-    UserSession.create(users(:administrator))
+    UserSession.create(@operator)
+
     assert !@controller.send(:require_no_user)
     assert_redirected_to prints_url
-    assert_equal I18n.t('messages.must_be_logged_out'),
+    assert_equal(
+      I18n.t('messages.must_be_logged_out'),
       @controller.send(:flash)[:notice]
+    )
   end
-  
+
   test 'require customer or user with user' do
     assert_equal false, @controller.send(:require_customer_or_user)
     assert_redirected_to new_user_session_url
-    assert_equal I18n.t('messages.must_be_logged_in'),
+    assert_equal(
+      I18n.t('messages.must_be_logged_in'),
       @controller.send(:flash)[:notice]
+    )
 
-    UserSession.create(users(:administrator))
+    UserSession.create(@operator)
+
     assert_not_equal false, @controller.send(:require_customer_or_user)
   end
 
@@ -101,7 +119,8 @@ class ApplicationControllerTest < ActionController::TestCase
     assert_not_nil @controller.send(:check_logged_in)
     assert_redirected_to root_url
 
-    UserSession.create(users(:administrator))
+    UserSession.create(@operator)
+
     assert_nil @controller.send(:check_logged_in)
     assert_not_nil @controller.send(:current_user)
     assert_not_equal false, @controller.send(:require_user)
@@ -112,71 +131,97 @@ class ApplicationControllerTest < ActionController::TestCase
     assert @controller.send(:require_no_customer)
     assert_not_nil @controller.send(:check_logged_in)
     assert_redirected_to root_url
-    
+
     CustomerSession.create(customers(:student))
+
     assert_nil @controller.send(:check_logged_in)
     assert_not_nil @controller.send(:current_customer)
     assert_not_equal false, @controller.send(:require_customer)
   end
-  
+
   test 'require customer or user with customer' do
     @request.host = "#{APP_CONFIG['subdomains']['customers']}.printhub.local"
+
     assert_equal false, @controller.send(:require_customer_or_user)
     assert_redirected_to new_customer_session_url
-    assert_equal I18n.t('messages.must_be_logged_in'),
+    assert_equal(
+      I18n.t('messages.must_be_logged_in'),
       @controller.send(:flash)[:notice]
+    )
 
     CustomerSession.create(customers(:student))
+
     assert_not_equal false, @controller.send(:require_customer_or_user)
   end
-  
+
   test 'require no customer or admin with admin' do
+    @operator.close_pending_shifts!
     assert_equal false, @controller.send(:require_no_customer_or_admin)
     assert_redirected_to new_user_session_url
-    assert_equal I18n.t('messages.must_be_admin'),
+    assert_equal(
+      I18n.t('messages.must_be_admin'),
       @controller.send(:flash)[:alert]
+    )
 
-    UserSession.create(users(:administrator))
+    UserSession.create(@operator)
+
     assert_not_equal false, @controller.send(:require_no_customer_or_admin)
   end
-  
+
   test 'require no customer or admin with customer' do
     @request.host = "#{APP_CONFIG['subdomains']['customers']}.printhub.local"
+
     assert @controller.send(:require_no_customer_or_admin)
-    
+
     CustomerSession.create(customers(:student))
+
     assert !@controller.send(:require_no_customer_or_admin)
     assert_redirected_to catalog_url
-    assert_equal I18n.t('messages.must_be_logged_out'),
+    assert_equal(
+      I18n.t('messages.must_be_logged_out'),
       @controller.send(:flash)[:notice]
+    )
   end
-  
+
   test 'require no customer or admin with user' do
-    UserSession.create(users(:operator))
+    @operator.update(admin: false)
+
+    UserSession.create(@operator)
+
     assert !@controller.send(:require_no_customer_or_admin)
     assert_redirected_to prints_url
-    assert_equal I18n.t('messages.must_be_admin'),
+    assert_equal(
+      I18n.t('messages.must_be_admin'),
       @controller.send(:flash)[:alert]
+    )
   end
 
   test 'require admin user with admin user' do
-    UserSession.create(users(:administrator))
+    UserSession.create(@operator)
+
     assert_not_equal false, @controller.send(:require_admin_user)
   end
 
   test 'require admin with a non admin user' do
-    UserSession.create(users(:operator))
+    @operator.update(admin: false)
+
+    UserSession.create(@operator)
+
     assert_equal false, @controller.send(:require_admin_user)
     assert_redirected_to prints_url
-    assert_equal I18n.t('messages.must_be_admin'),
+    assert_equal(
+      I18n.t('messages.must_be_admin'),
       @controller.send(:flash)[:alert]
+    )
   end
 
   test 'require admin user without user' do
     assert_equal false, @controller.send(:require_admin_user)
     assert_redirected_to new_user_session_url
-    assert_equal I18n.t('messages.must_be_admin'),
+    assert_equal(
+      I18n.t('messages.must_be_admin'),
       @controller.send(:flash)[:alert]
+    )
   end
 
   test 'store location' do
@@ -192,28 +237,35 @@ class ApplicationControllerTest < ActionController::TestCase
   end
 
   test 'not leave open shift' do
-    user = users(:operator_with_open_shift)
+    @operator.update(admin: false)
 
-    UserSession.create(user)
+    @operator.close_pending_shifts!
+
+    UserSession.create(@operator)
+
     @controller.send(:session)[:has_an_open_shift] = true
 
-    assert_not_nil @controller.send(:run_shift_tasks)
-    assert_redirected_to edit_shift_url(shifts(:open_shift))
+    @shift = Shift.create!(user_id: @operator.id, start: 9.hours.ago)
 
-    assert user.close_pending_shifts!
+    assert_not_nil @controller.send(:run_shift_tasks)
+    assert_redirected_to edit_shift_url(@shift)
+
+    assert @operator.close_pending_shifts!
     @controller.send(:session)[:has_an_open_shift] = false
-    
+
     assert_difference 'Shift.count' do
       assert @controller.send(:run_shift_tasks)
     end
   end
 
   test 'dont ask for shift on not_shifted user' do
-    user = users(:developer)
+    @operator.update(not_shifted: true)
 
     assert_no_difference 'Shift.count' do
-      UserSession.create(user)
+      UserSession.create(@operator)
+
       @controller.send(:session)[:has_an_open_shift] = true
+
       assert_nil @controller.send(:run_shift_tasks)
       assert_response :success
     end

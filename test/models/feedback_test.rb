@@ -4,7 +4,7 @@ require 'test_helper'
 class FeedbackTest < ActiveSupport::TestCase
   # Función para inicializar las variables utilizadas en las pruebas
   def setup
-    @feedback = Feedback.find(feedbacks(:needs_polishing).id)
+    @feedback = feedbacks(:needs_polishing)
   end
 
   # Prueba que se realicen las búsquedas como se espera
@@ -33,7 +33,6 @@ class FeedbackTest < ActiveSupport::TestCase
         comments: 'It seems to me that needs polishing'
       ), @feedback.errors.full_messages.join('; ')
     end
-    
     assert_not_equal 'this_should_be_ignored', @feedback.reload.item
     assert_equal 'It seems to me that needs polishing', @feedback.comments
   end

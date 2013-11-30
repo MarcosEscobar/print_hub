@@ -2,7 +2,7 @@ require 'test_helper'
 
 class PrintJobTypeTest < ActiveSupport::TestCase
   def setup
-    @print_job_type = PrintJobType.find print_job_types(:a4)
+    @print_job_type = print_job_types(:a4)
   end
 
   test 'find' do
@@ -29,7 +29,7 @@ class PrintJobTypeTest < ActiveSupport::TestCase
 
   test 'update' do
     assert_no_difference 'PrintJobType.count' do
-      assert @print_job_type.update_attributes(name: 'Updated name'),
+      assert @print_job_type.update(name: 'Updated name'),
         @print_job_type.errors.full_messages.join('; ')
     end
 
@@ -38,7 +38,6 @@ class PrintJobTypeTest < ActiveSupport::TestCase
 
   test 'destroy' do
     print_job_type = PrintJobType.find(print_job_types(:color))
-
     assert_difference('PrintJobType.count', -1) { print_job_type.destroy }
   end
 
@@ -64,7 +63,6 @@ class PrintJobTypeTest < ActiveSupport::TestCase
       name: print_job_types(:a4).name,
       price: 1
     )
-
     assert @print_job_type.invalid?
     assert_equal 1, @print_job_type.errors.count
     assert_equal [error_message_from_model(@print_job_type, :name, :taken)],
@@ -73,16 +71,13 @@ class PrintJobTypeTest < ActiveSupport::TestCase
 
   test 'probe update default' do
     @print_job_type = print_job_types(:color)
-
     assert_not_nil PrintJobType.default
     assert !@print_job_type.default
-
     assert_no_difference 'PrintJobType.count' do
       assert_difference 'Version.count', 2 do
-        @print_job_type.update_attributes(default: true)
+        @print_job_type.update(default: true)
       end
     end
-
     assert_equal PrintJobType.default, @print_job_type
   end
 

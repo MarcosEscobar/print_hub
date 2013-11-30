@@ -3,8 +3,7 @@ require 'test_helper'
 class PrintJobTypesControllerTest < ActionController::TestCase
   setup do
     @print_job_type = PrintJobType.find print_job_types(:a4)
-
-    UserSession.create(users(:administrator))
+    UserSession.create(users(:operator))
   end
 
   test "should get index" do
@@ -27,7 +26,6 @@ class PrintJobTypesControllerTest < ActionController::TestCase
         two_sided: true
       }
     end
-
     assert_redirected_to print_job_type_url(assigns(:print_job_type))
   end
 
@@ -43,7 +41,6 @@ class PrintJobTypesControllerTest < ActionController::TestCase
 
   test "should update print_job_type" do
     put :update, id: @print_job_type, print_job_type: { name: 'another-a4' }
-
     assert_redirected_to print_job_type_url(assigns(:print_job_type))
   end
 
@@ -51,7 +48,6 @@ class PrintJobTypesControllerTest < ActionController::TestCase
     assert_difference('PrintJobType.count', -1) do
       delete :destroy, id: @print_job_type
     end
-
     assert_redirected_to print_job_types_url
   end
 end

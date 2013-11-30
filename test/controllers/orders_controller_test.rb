@@ -3,12 +3,17 @@ require 'test_helper'
 class OrdersControllerTest < ActionController::TestCase
   setup do
     @order = orders(:for_tomorrow)
+
     @request.host = "#{APP_CONFIG['subdomains']['customers']}.printhub.local"
+
+    @operator = users(:operator)
   end
 
   test 'should get user index' do
     @request.host = 'localhost'
-    UserSession.create(users(:administrator))
+
+    UserSession.create(@operator)
+
     get :index, type: 'all'
     assert_response :success
     assert_not_nil assigns(:orders)
@@ -18,10 +23,12 @@ class OrdersControllerTest < ActionController::TestCase
     assert_select '#unexpected_error', false
     assert_template 'orders/index'
   end
-  
+
   test 'should get user for print index' do
     @request.host = 'localhost'
-    UserSession.create(users(:administrator))
+
+    UserSession.create(@operator)
+
     get :index, type: 'print'
     assert_response :success
     assert_not_nil assigns(:orders)
@@ -29,10 +36,12 @@ class OrdersControllerTest < ActionController::TestCase
     assert_select '#unexpected_error', false
     assert_template 'orders/index'
   end
-  
+
   test 'should get user filtered index' do
     @request.host = 'localhost'
-    UserSession.create(users(:administrator))
+
+    UserSession.create(@operator)
+
     get :index, type: 'all', q: 'darth'
     assert_response :success
     assert_not_nil assigns(:orders)
@@ -41,12 +50,12 @@ class OrdersControllerTest < ActionController::TestCase
     assert_select '#unexpected_error', false
     assert_template 'orders/index'
   end
-  
+
   test 'should get customer index' do
-    customer = Customer.find(customers(:student_without_bonus).id)
-    
+    customer = customers(:student_without_bonus)
+
     CustomerSession.create(customer)
-    
+
     get :index
     assert_response :success
     assert_not_nil assigns(:orders)
@@ -58,6 +67,7 @@ class OrdersControllerTest < ActionController::TestCase
 
   test 'should get new' do
     CustomerSession.create(customers(:student_without_bonus))
+
     get :new
     assert_response :success
     assert_select '#unexpected_error', false
@@ -65,15 +75,15 @@ class OrdersControllerTest < ActionController::TestCase
   end
 
   test 'should create order' do
-    customer = Customer.find(customers(:student_without_bonus).id)
-    
+    customer = customers(:student_without_bonus)
+
     CustomerSession.create(customer)
 
     file_line = FileLine.new(
       file: fixture_file_upload('/files/test.pdf', 'application/pdf')
     )
     print_job_type_id = print_job_types(:a4)
-    
+
     assert_difference [
       'customer.orders.count', 'OrderLine.count', 'FileLine.count'
     ] do
@@ -100,10 +110,12 @@ class OrdersControllerTest < ActionController::TestCase
     # Prueba básica para "asegurar" el funcionamiento del versionado
     assert_nil Version.last.whodunnit
   end
-  
+
   test 'should show user order' do
     @request.host = 'localhost'
-    UserSession.create(users(:administrator))
+
+    UserSession.create(@operator)
+
     get :show, type: 'all', id: @order.to_param
     assert_response :success
     assert_select '#unexpected_error', false
@@ -111,7 +123,9 @@ class OrdersControllerTest < ActionController::TestCase
   end
 
   test 'should show customer order' do
+
     CustomerSession.create(customers(:student_without_bonus))
+
     get :show, id: @order.to_param
     assert_response :success
     assert_select '#unexpected_error', false
@@ -119,7 +133,9 @@ class OrdersControllerTest < ActionController::TestCase
   end
 
   test 'should get edit' do
+
     CustomerSession.create(customers(:student_without_bonus))
+
     get :edit, id: @order.to_param
     assert_response :success
     assert_select '#unexpected_error', false
@@ -127,35 +143,41 @@ class OrdersControllerTest < ActionController::TestCase
   end
 
   test 'should update order' do
+
     CustomerSession.create(customers(:student_without_bonus))
+
     put :update, id: @order.to_param, order: {
       scheduled_at: I18n.l(5.days.from_now.at_midnight, format: :minimal),
       notes: 'Updated notes'
     }
-    
+
     assert_redirected_to order_url(assigns(:order))
     # This attribute can not be altered
     assert_not_equal 5.days.from_now.at_midnight, @order.reload.scheduled_at
     assert_equal 'Updated notes', @order.notes
   end
-  
+
   test 'should cancel order as customer' do
+
     CustomerSession.create(customers(:student_without_bonus))
+
     assert_no_difference 'Order.count' do
       delete :destroy, id: @order.to_param
     end
-    
+
     assert_redirected_to order_url(assigns(:order))
     assert @order.reload.cancelled?
   end
-  
+
   test 'should cancel order as user' do
     @request.host = 'localhost'
-    UserSession.create(users(:administrator))
+
+    UserSession.create(@operator)
+
     assert_no_difference 'Order.count' do
       delete :destroy, id: @order.to_param, type: 'all'
     end
-    
+
     assert_redirected_to order_url(assigns(:order), type: 'all')
     assert @order.reload.cancelled?
   end
@@ -178,6 +200,7 @@ class OrdersControllerTest < ActionController::TestCase
 
   test 'should clean catalog order' do
     CustomerSession.create(customers(:student))
+
     assert session[:documents_to_order].blank?
 
     session[:documents_to_order] = @order.order_lines.map(&:document_id)

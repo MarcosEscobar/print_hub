@@ -3,8 +3,8 @@ require 'test_helper'
 class ShiftsControllerTest < ActionController::TestCase
   setup do
     @shift = shifts(:current_shift)
-    
-    UserSession.create(users(:administrator))
+
+    UserSession.create(users(:operator))
   end
 
   test 'should get index' do
@@ -50,10 +50,10 @@ class ShiftsControllerTest < ActionController::TestCase
           description: 'Some shift'
         }
       end
-      
+
       assert_redirected_to shifts_url
       assert_equal finish.to_i, @shift.reload.finish.to_i
-    end 
+    end
   end
 
   test 'should update stale shift' do
@@ -73,7 +73,7 @@ class ShiftsControllerTest < ActionController::TestCase
       assert !session[:has_an_open_shift]
     end
   end
-  
+
   test 'should destroy shift' do
     assert_difference('Shift.count', -1) do
       delete :destroy, id: @shift
@@ -94,13 +94,15 @@ class ShiftsControllerTest < ActionController::TestCase
   test 'should get pay pending for user between dates' do
     from = 3.weeks.ago.to_date
     to = Time.zone.today
-    user = users(:operator)
-    shifts = user.shifts.pending_between(from, to)
-    
+    operator = users(:operator)
+    operator.update(admin: false)
+
+    shifts = operator.shifts.pending_between(from, to)
+
     get :index, format: :json, pay_pending_shifts_for_user_between: {
-      user_id: user.id, start: from.to_s(:db), finish: to.to_s(:db)
+      user_id: operator.id, start: from.to_s(:db), finish: to.to_s(:db)
     }
-    
+
     assert_response :success
     assert_not_nil assigns(:shifts)
     assert assigns(:shifts).size > 0
@@ -108,8 +110,8 @@ class ShiftsControllerTest < ActionController::TestCase
   end
 
   test 'should get json pagination' do
-    UserSession.create(users(:administrator))
     operator = users(:operator) # Operator closed shifts = 3
+    operator.update(admin: false)
 
     get :json_paginate, format: :json, user_id: operator.id
     assert_response :success

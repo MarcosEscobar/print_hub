@@ -13,6 +13,9 @@
 
 ActiveRecord::Schema.define(version: 20130705190513) do
 
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
   create_table "article_lines", force: true do |t|
     t.integer  "print_id"
     t.integer  "article_id",                                        null: false
@@ -27,13 +30,13 @@ ActiveRecord::Schema.define(version: 20130705190513) do
   add_index "article_lines", ["print_id"], name: "index_article_lines_on_print_id", using: :btree
 
   create_table "articles", force: true do |t|
+    t.integer  "code",                                              null: false
     t.string   "name",                                              null: false
     t.decimal  "price",        precision: 15, scale: 3,             null: false
     t.text     "description"
     t.integer  "lock_version",                          default: 0
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "code",                                              null: false
   end
 
   add_index "articles", ["code"], name: "index_articles_on_code", unique: true, using: :btree
@@ -48,10 +51,10 @@ ActiveRecord::Schema.define(version: 20130705190513) do
     t.string   "type",                                 default: "Bonus", null: false
   end
 
-  add_index "credits", ["created_at"], name: "index_bonuses_on_created_at", using: :btree
-  add_index "credits", ["customer_id"], name: "index_bonuses_on_customer_id", using: :btree
+  add_index "credits", ["created_at"], name: "index_credits_on_created_at", using: :btree
+  add_index "credits", ["customer_id"], name: "index_credits_on_customer_id", using: :btree
   add_index "credits", ["type"], name: "index_credits_on_type", using: :btree
-  add_index "credits", ["valid_until"], name: "index_bonuses_on_valid_until", using: :btree
+  add_index "credits", ["valid_until"], name: "index_credits_on_valid_until", using: :btree
 
   create_table "customers", force: true do |t|
     t.string   "name",                                                                        null: false
@@ -81,7 +84,7 @@ ActiveRecord::Schema.define(version: 20130705190513) do
     t.integer "tag_id",      null: false
   end
 
-  add_index "document_tag_relations", ["document_id", "tag_id"], name: "index_documents_tags_on_document_id_and_tag_id", unique: true, using: :btree
+  add_index "document_tag_relations", ["document_id", "tag_id"], name: "index_document_tag_relations_on_document_id_and_tag_id", unique: true, using: :btree
 
   create_table "documents", force: true do |t|
     t.integer  "code",                              null: false
@@ -124,8 +127,8 @@ ActiveRecord::Schema.define(version: 20130705190513) do
     t.integer  "copies",                                     null: false
     t.decimal  "price_per_copy",    precision: 15, scale: 3, null: false
     t.integer  "order_id"
-    t.datetime "created_at",                                 null: false
-    t.datetime "updated_at",                                 null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
     t.integer  "print_job_type_id",                          null: false
     t.integer  "print_id"
   end
@@ -187,8 +190,8 @@ ActiveRecord::Schema.define(version: 20130705190513) do
     t.boolean  "two_sided",    default: false
     t.boolean  "default",      default: false
     t.integer  "lock_version", default: 0
-    t.datetime "created_at",                   null: false
-    t.datetime "updated_at",                   null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
     t.string   "media"
   end
 
@@ -254,8 +257,8 @@ ActiveRecord::Schema.define(version: 20130705190513) do
     t.text     "description"
     t.integer  "lock_version", default: 0,     null: false
     t.integer  "user_id",                      null: false
-    t.datetime "created_at",                   null: false
-    t.datetime "updated_at",                   null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
     t.boolean  "paid",         default: false
   end
 
@@ -320,21 +323,21 @@ ActiveRecord::Schema.define(version: 20130705190513) do
   add_index "versions", ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id", using: :btree
   add_index "versions", ["whodunnit"], name: "index_versions_on_whodunnit", using: :btree
 
-  add_foreign_key "article_lines", "articles", :name => "article_lines_article_id_fk", :dependent => :restrict
-  add_foreign_key "article_lines", "prints", :name => "article_lines_print_id_fk", :dependent => :restrict
+  add_foreign_key "article_lines", "articles", name: "article_lines_article_id_fk", dependent: :restrict
+  add_foreign_key "article_lines", "prints", name: "article_lines_print_id_fk", dependent: :restrict
 
-  add_foreign_key "credits", "customers", :name => "credits_customer_id_fk", :dependent => :restrict
+  add_foreign_key "credits", "customers", name: "credits_customer_id_fk", dependent: :restrict
 
-  add_foreign_key "order_lines", "documents", :name => "order_lines_document_id_fk", :dependent => :restrict
-  add_foreign_key "order_lines", "orders", :name => "order_lines_order_id_fk", :dependent => :restrict
+  add_foreign_key "order_lines", "documents", name: "order_lines_document_id_fk", dependent: :restrict
+  add_foreign_key "order_lines", "orders", name: "order_lines_order_id_fk", dependent: :restrict
 
-  add_foreign_key "orders", "customers", :name => "orders_customer_id_fk", :dependent => :restrict
+  add_foreign_key "orders", "customers", name: "orders_customer_id_fk", dependent: :restrict
 
-  add_foreign_key "print_jobs", "documents", :name => "print_jobs_document_id_fk", :dependent => :restrict
-  add_foreign_key "print_jobs", "prints", :name => "print_jobs_print_id_fk", :dependent => :restrict
+  add_foreign_key "print_jobs", "documents", name: "print_jobs_document_id_fk", dependent: :restrict
+  add_foreign_key "print_jobs", "prints", name: "print_jobs_print_id_fk", dependent: :restrict
 
-  add_foreign_key "prints", "customers", :name => "prints_customer_id_fk", :dependent => :restrict
-  add_foreign_key "prints", "orders", :name => "prints_order_id_fk", :dependent => :restrict
-  add_foreign_key "prints", "users", :name => "prints_user_id_fk", :dependent => :restrict
+  add_foreign_key "prints", "customers", name: "prints_customer_id_fk", dependent: :restrict
+  add_foreign_key "prints", "orders", name: "prints_order_id_fk", dependent: :restrict
+  add_foreign_key "prints", "users", name: "prints_user_id_fk", dependent: :restrict
 
 end
